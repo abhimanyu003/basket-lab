@@ -43,7 +43,7 @@ function updateURLWithSettings() {
         
         const encoded = btoa(JSON.stringify(settings));
         const url = new URL(window.location.href);
-        url.searchParams.set('config', encoded);
+        url.searchParams.set('basket', encoded);
         
         window.history.replaceState({}, '', url.toString());
         updateShareURLInput();
@@ -61,17 +61,17 @@ function updateShareURLInput() {
 
 function loadSettingsFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    const config = urlParams.get('config');
+    const basketConfig = urlParams.get('basket');
     
-    if (!config) return false;
+    if (!basketConfig) return false;
     
     try {
-        if (!/^[A-Za-z0-9+/=]+$/.test(config)) {
+        if (!/^[A-Za-z0-9+/=]+$/.test(basketConfig)) {
             console.error('Invalid config format');
             return false;
         }
         
-        const settings = JSON.parse(atob(config));
+        const settings = JSON.parse(atob(basketConfig));
         
         if (settings.mode && ['lumpsum', 'sip'].includes(settings.mode)) {
             investmentMode = settings.mode;
