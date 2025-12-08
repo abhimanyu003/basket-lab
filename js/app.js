@@ -2,7 +2,7 @@
 
 // Global state
 let baskets = JSON.parse(JSON.stringify(DEFAULT_BASKETS));
-let selectedPeriod = '1Y';
+let selectedPeriod = '3Y';
 let customStartDate = null;
 let customEndDate = null;
 let investmentMode = 'lumpsum';
