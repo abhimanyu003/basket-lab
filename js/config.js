@@ -30,7 +30,7 @@ const SWATCHES = [
 ];
 
 // TIME PERIODS
-const PERIODS = ['1M', '2M', '3M', '6M', '1Y', '2Y', '3Y', '5Y', '7Y', '10Y'];
+const PERIODS = ['1M', '2M', '3M', '6M', '1Y', '2Y', '3Y', '5Y', '7Y', '10Y', 'Custom'];
 
 // Default Funds
 const FUNDS = [

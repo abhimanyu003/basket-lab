@@ -1,4 +1,4 @@
-# 📊 Indian Mutual Fund Basket Analyzer - Backtesting & Portfolio Collection Tool
+# 📊 Basket Lab Mutual Fund Basket Analyzer And Backtesting Tool
 
 A interactive tool to backtest and analyze Indian mutual fund baskets and portfolio collections with real historical data. Build custom fund baskets, compare multiple portfolio collections, visualize performance, calculate returns (CAGR/XIRR), and assess risk through drawdown analysis.
 
