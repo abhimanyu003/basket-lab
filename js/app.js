@@ -105,27 +105,36 @@ function initUI() {
 
 // Basket management
 function renderBasketList() {
-    document.getElementById('basket-list').innerHTML = baskets.map(b => `
+    document.getElementById('basket-list').innerHTML = baskets.map(b => {
+        const funds = Object.entries(b.allocation).filter(([, v]) => v > 0);
+        const fundsList = funds.map(([k, v]) => {
+            const fundName = FUNDS.find(f => f.id === k)?.name || k;
+            return `<div class="text-zinc-600 leading-tight py-0.5">
+                        ${fundName} <span class="font-medium text-zinc-800">(${v.toFixed(0)}%)</span>
+                    </div>`;
+        }).join('');
+        
+        return `
         <div class="group flex items-center justify-between p-2.5 rounded-md border border-zinc-100 bg-white hover:border-zinc-300 transition-all ${b.active ? 'shadow-sm' : 'opacity-60 grayscale'}">
-            <div class="flex items-center gap-2.5 overflow-hidden">
-                <input type="checkbox" ${b.active ? 'checked' : ''} onchange="toggleBasket(${b.id})" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer">
-                <div class="min-w-0">
-                    <div class="font-medium text-sm text-zinc-900 truncate flex items-center gap-1.5 strong">
+            <div class="flex items-center gap-2.5 overflow-hidden flex-1">
+                <div class="min-w-0 flex-1">
+                    <div class="font-medium text-sm text-zinc-900 flex items-center gap-1.5 mb-1.5">
+                        <input type="checkbox" ${b.active ? 'checked' : ''} onchange="toggleBasket(${b.id})" class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer flex-shrink-0">
                         <span class="h-2 w-2 rounded-full flex-shrink-0" style="background-color:${b.color}"></span> ${b.name}
                     </div>
-                    <div class="text-[11px] text-zinc-600 mt-1 leading-relaxed">
-                        <span class="font-medium text-zinc-700">${Object.entries(b.allocation).filter(([, v]) => v > 0).length} ${Object.entries(b.allocation).filter(([, v]) => v > 0).length === 1 ? 'fund' : 'funds'}</span>
-                        <span class="text-zinc-400 mx-1">•</span>
-                        <span class="truncate inline-block align-bottom max-w-[200px]">${Object.entries(b.allocation).filter(([, v]) => v > 0).map(([k, v]) => `${FUNDS.find(f => f.id === k)?.name.substring(0, 15) || k} ${v.toFixed(0)}%`).join(' • ')}</span>
+                    <div class="text-[11px] text-zinc-600 space-y-0.5 ml-6">
+                        <div class="font-medium text-zinc-700 mb-1">${funds.length} ${funds.length === 1 ? 'fund' : 'funds'}</div>
+                        ${fundsList}
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 flex-shrink-0">
                 <button onclick="editBasket(${b.id})" class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors hover:bg-zinc-100 hover:text-zinc-900 h-6 px-1.5" title="Edit Basket"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
                 <button onclick="duplicateBasket(${b.id})" class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors hover:bg-blue-100 hover:text-blue-600 h-6 px-1.5" title="Duplicate Basket"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button>
                 <button onclick="deleteBasket(${b.id})" class="inline-flex items-center justify-center rounded-md text-xs font-medium transition-colors hover:bg-red-100 hover:text-red-600 h-6 px-1.5" title="Delete Basket"><svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 function toggleBasket(id) {
