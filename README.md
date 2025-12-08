@@ -1,32 +1,35 @@
 # 📊 Basket Lab: Mutual Fund Backtesting
 
-A interactive tool to backtest and analyze Indian mutual fund baskets and portfolio collections with real historical data. Build custom fund baskets, compare multiple portfolio collections, visualize performance, calculate returns (CAGR/XIRR), and assess risk through drawdown analysis.
+An interactive  Mutual Fund Backtesting & Portfolio Allocation Analyzer to backtest and analyze Indian mutual fund baskets with real historical data. Build custom fund baskets, test different allocation strategies, compare multiple portfolio allocations side-by-side, visualize performance, calculate returns (CAGR/XIRR), and assess risk through drawdown analysis.
 
 **🚀 Demo: https://abhimanyu003.github.io/basket-lab/**
 
 
 ### ✨ Features
 
+- **Portfolio Allocation Analyzer** - Analyze and backtest different portfolio allocation strategies with historical data
 - **Basket Backtesting** - Test historical performance of custom mutual fund baskets and collections
-- **Multiple Portfolio Collections** - Compare different fund basket combinations side-by-side
-- **Lumpsum & SIP Modes** - Backtest both one-time investments and monthly SIP strategies
-- **Flexible Time Periods** - Backtest performance across 3M, 6M, 1Y, 3Y, 5Y, 10Y, or custom date ranges
-- **Real-time Calculations** - CAGR, XIRR, absolute returns, and maximum drawdown metrics for each basket
-- **Interactive Charts** - Growth trajectory and risk visualization for basket collections
-- **Shareable Basket Configurations** - Generate URLs to share your basket and collection setups with others
+- **Custom Allocations** - Experiment with different allocation percentages by adjusting fund weights within each basket
+- **Multiple Portfolio Collections** - Compare different fund basket allocations side-by-side
+- **Lumpsum & SIP Modes** - Backtest both one-time investments and monthly SIP allocation strategies
+- **Flexible Time Periods** - Analyze allocation performance across 3M, 6M, 1Y, 3Y, 5Y, 10Y, or custom date ranges
+- **Real-time Calculations** - CAGR, XIRR, absolute returns, and maximum drawdown metrics for each allocation
+- **Interactive Charts** - Growth trajectory and risk visualization for portfolio allocations
+- **Shareable Allocation Configurations** - Generate URLs to share your basket and allocation setups with others
 - **Smart Fund Search** - Fuzzy search powered by Fuse.js for easy fund discovery and basket building
 
 
 ### 💡 How to Use
 
-1. **Choose Investment Mode** - Select between Lumpsum or Monthly SIP for backtesting
+1. **Choose Investment Mode** - Select between Lumpsum or Monthly SIP for allocation backtesting
 2. **Set Amount & Period** - Configure your investment amount and backtesting time horizon
-3. **Create Fund Baskets** - Build custom baskets by adding funds and setting allocation percentages
-4. **Build Portfolio Collections** - Create multiple baskets to compare different strategies
-5. **Backtest Performance** - View side-by-side backtesting metrics and charts for each basket
-6. **Share Basket Collections** - Copy the URL to share your basket analysis with others
+3. **Create Fund Baskets** - Build custom baskets by adding funds and setting allocation percentages (must total 100%)
+4. **Analyze Different Allocations** - Adjust fund weights to test and analyze various portfolio allocation strategies
+5. **Build Portfolio Collections** - Create multiple baskets to compare different allocation strategies side-by-side
+6. **Backtest Allocation Performance** - View comparative metrics and charts for each portfolio allocation
+7. **Share Allocation Analysis** - Copy the URL to share your basket and allocation analysis with others
 
-### 📈 Backtesting Metrics Explained
+### 📈 Portfoliing Metrics Explained
 
 - **CAGR** - Compound Annual Growth Rate for lumpsum basket investments
 - **XIRR** - Extended Internal Rate of Return for SIP basket investments
