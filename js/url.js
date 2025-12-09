@@ -1,5 +1,26 @@
 // URL Management and Sharing
 
+// Pako Compression + Base64URL Encoding
+function compressToBase64URL(str) {
+    const compressed = pako.deflate(str, { level: 9 });
+    const base64 = btoa(String.fromCharCode(...compressed));
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function decompressFromBase64URL(base64url) {
+    let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+        base64 += '=';
+    }
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const decompressed = pako.inflate(bytes, { to: 'string' });
+    return decompressed;
+}
+
 function sanitizeString(str, maxLength = 200) {
     if (typeof str !== 'string') return '';
     return str.replace(/[<>'"]/g, '').substring(0, maxLength);
@@ -41,7 +62,7 @@ function updateURLWithSettings() {
             })).filter(b => Object.keys(b.allocation).length > 0)
         };
         
-        const encoded = btoa(JSON.stringify(settings));
+        const encoded = compressToBase64URL(JSON.stringify(settings));
         const url = new URL(window.location.href);
         url.searchParams.set('basket', encoded);
         
@@ -66,12 +87,18 @@ function loadSettingsFromURL() {
     if (!basketConfig) return false;
     
     try {
-        if (!/^[A-Za-z0-9+/=]+$/.test(basketConfig)) {
+        // Try new format (Pako + Base64URL) first
+        let settings;
+        if (/^[A-Za-z0-9_-]+$/.test(basketConfig)) {
+            // New format: Base64URL (no +, /, or =)
+            settings = JSON.parse(decompressFromBase64URL(basketConfig));
+        } else if (/^[A-Za-z0-9+/=]+$/.test(basketConfig)) {
+            // Legacy format: standard Base64
+            settings = JSON.parse(atob(basketConfig));
+        } else {
             console.error('Invalid config format');
             return false;
         }
-        
-        const settings = JSON.parse(atob(basketConfig));
         
         if (settings.mode && ['lumpsum', 'sip'].includes(settings.mode)) {
             investmentMode = settings.mode;

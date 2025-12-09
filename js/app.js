@@ -142,7 +142,7 @@ function renderBasketList() {
     }).join('');
 }
 
-function toggleBasket(id) {
+async function toggleBasket(id) {
     const b = baskets.find(x => x.id === id);
     if (b) {
         b.active = !b.active;
