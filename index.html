@@ -72,9 +72,10 @@
         <div class="max-w-7xl mx-auto flex h-14 items-center justify-between px-6">
             <div class="flex items-center gap-2">
                 <div
-                    class="h-6 w-6 rounded-md bg-zinc-900 flex items-center justify-center text-white font-bold text-xs">
+                    class="h-6 w-6 rounded-md bg-zinc-900 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
                     MF</div>
-                <span class="font-semibold text-sm tracking-tight">Basket Lab - Mutual Fund Backtesting & Portfolio Allocation Analyzer</span>
+                <span class="font-semibold text-sm tracking-tight hidden md:inline">Basket Lab - Mutual Fund Backtesting & Portfolio Allocation Analyzer</span>
+                <span class="font-semibold text-sm tracking-tight md:hidden">Basket Lab</span>
             </div>
             <div class="flex items-center gap-4">
                 <button onclick="shareSettings()"
@@ -281,9 +282,9 @@
 
             <div class="flex flex-col lg:flex-row justify-between items-start gap-8">
                 <!-- Contributors -->
-                <div class="flex-1">
+                <div class="w-full lg:flex-1">
                     <h3 class="text-sm font-semibold text-zinc-900 mb-4">Contributors</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         
                         <!-- Contributor 1 -->
                         <div class="bg-zinc-50 border border-zinc-200 rounded-md p-4 hover:border-zinc-300 transition-colors">
@@ -345,7 +346,7 @@
                 </div>
 
                 <!-- Disclaimer -->
-                <div class="flex-1 md:max-w-2xl">
+                <div class="w-full lg:flex-1 lg:max-w-2xl"></div>
                     <div class="bg-amber-50 border border-amber-200 rounded-md p-4">
                         <div class="flex gap-2">
                             <svg class="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
