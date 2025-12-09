@@ -234,6 +234,21 @@
                     <canvas id="drawdownChart"></canvas>
                 </div>
             </div>
+
+            <!-- Yearly Performance Ranking -->
+            <div class="bg-white border border-zinc-200 rounded-md shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-zinc-200">
+                    <h3 class="font-semibold leading-none tracking-tight">Yearly Performance Ranking <span
+                            id="ranking-period" class="text-zinc-500 font-normal text-sm ml-2"></span></h3>
+                    <p class="text-sm text-zinc-500 mt-1.5">Best to worst performing baskets for each year in the selected timeframe.</p>
+                    <p class="text-xs text-zinc-500 mt-1.5"><i>"Make sure all funds have data for the selected timeframe for accurate results"</i></p>
+                </div>
+                <div class="w-full overflow-auto">
+                    <div id="yearly-ranking-container">
+                        <!-- JS Generated Ranking Table -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Share URL Section -->
@@ -510,6 +525,7 @@
     <script src="js/data.js"></script>
     <script src="js/calculations.js"></script>
     <script src="js/charts.js"></script>
+    <script src="js/ranking.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/modal.js"></script>
     <script src="js/url.js"></script>

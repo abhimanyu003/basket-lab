@@ -72,4 +72,7 @@ function renderStatsTable(results) {
             <td class="p-4 align-middle text-right text-red-600 font-medium bg-red-50/50">${s.mdd.toFixed(2)}%</td>
         </tr>`;
     }).join('');
+    
+    // Render yearly ranking table
+    renderYearlyRankingTable(results);
 }

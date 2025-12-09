@@ -80,6 +80,7 @@ function updatePeriodLabels(selectedPeriod) {
     document.getElementById('summary-period').textContent = `(${label})`;
     document.getElementById('portfolio-period').textContent = `(${label})`;
     document.getElementById('drawdown-period').textContent = `(${label})`;
+    document.getElementById('ranking-period').textContent = `(${label})`;
 }
 
 // Modal functions
