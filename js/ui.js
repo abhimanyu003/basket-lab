@@ -92,7 +92,15 @@ function openModal(id = null) {
     
     modalFundsState = [];
     for (const [fundId, weight] of Object.entries(b.allocation)) {
-        const fund = FUNDS.find(f => f.id === fundId);
+        let fund = FUNDS.find(f => f.id === fundId);
+        if (!fund && ALL_FUNDS_CACHE) {
+            const cachedFund = ALL_FUNDS_CACHE.find(f => f.schemeCode == fundId);
+            if (cachedFund) {
+                fund = { id: String(cachedFund.schemeCode), name: cachedFund.schemeName };
+                FUNDS.push(fund);
+            }
+        }
+        
         if (fund) {
             const isLocked = b.locks && b.locks[fundId] === true;
             modalFundsState.push({ id: fund.id, name: fund.name, weight: weight, locked: isLocked });

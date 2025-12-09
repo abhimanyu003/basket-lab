@@ -108,7 +108,12 @@ function renderBasketList() {
     document.getElementById('basket-list').innerHTML = baskets.map(b => {
         const funds = Object.entries(b.allocation).filter(([, v]) => v > 0);
         const fundsList = funds.map(([k, v]) => {
-            const fundName = FUNDS.find(f => f.id === k)?.name || k;
+            let fundName = FUNDS.find(f => f.id === k)?.name;
+            if (!fundName && ALL_FUNDS_CACHE) {
+                const fund = ALL_FUNDS_CACHE.find(f => f.schemeCode == k);
+                fundName = fund?.schemeName;
+            }
+            fundName = fundName || k; // Fallback to ID if not found
             return `<div class="text-zinc-600 leading-tight py-0.5">
                         ${fundName} <span class="font-medium text-zinc-800">(${v.toFixed(0)}%)</span>
                     </div>`;
@@ -260,6 +265,9 @@ async function initApp() {
     initUI();
     updatePeriodLabels(selectedPeriod);
     await fetchAllData(baskets);
+
+    renderBasketList();
+    
     updateAnalysis();
     
     setTimeout(() => {
