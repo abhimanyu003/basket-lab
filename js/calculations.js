@@ -100,256 +100,287 @@ function findClosestNAVBeforeOrOn(history, targetDate) {
     return history[0];
 }
 
-// Calculate Basket Performance
+function calculateDaysBetween(startDate, endDate) {
+    return Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+}
+
+function calculateDrawdown(currentValue, peakValue) {
+    return peakValue > 0 ? parseFloat((((currentValue - peakValue) / peakValue) * 100).toFixed(2)) : 0;
+}
+
+function updateDrawdownTracking(drawdown, date, drawdownState) {
+    const { drawdownPeriods, currentDrawdownStart, isInDrawdown } = drawdownState;
+    
+    if (drawdown < 0 && !isInDrawdown) {
+        // Starting a new drawdown period
+        drawdownState.isInDrawdown = true;
+        drawdownState.currentDrawdownStart = date;
+    } else if (drawdown === 0 && isInDrawdown) {
+        // Recovered from drawdown
+        if (currentDrawdownStart) {
+            const drawdownDays = calculateDaysBetween(currentDrawdownStart, date);
+            if (drawdownDays > 0) {
+                drawdownPeriods.push(drawdownDays);
+            }
+        }
+        drawdownState.isInDrawdown = false;
+        drawdownState.currentDrawdownStart = null;
+    }
+}
+
+function finalizeDrawdownTracking(lastDate, drawdownState) {
+    const { drawdownPeriods, currentDrawdownStart, isInDrawdown } = drawdownState;
+    
+    if (isInDrawdown && currentDrawdownStart) {
+        const drawdownDays = calculateDaysBetween(currentDrawdownStart, lastDate);
+        if (drawdownDays > 0) {
+            drawdownPeriods.push(drawdownDays);
+        }
+    }
+    
+    const avgDrawdownDuration = drawdownPeriods.length > 0 ? 
+        Math.round(drawdownPeriods.reduce((sum, days) => sum + days, 0) / drawdownPeriods.length) : 0;
+    const maxDrawdownDuration = drawdownPeriods.length > 0 ? Math.max(...drawdownPeriods) : 0;
+    
+    return { avgDrawdownDuration, maxDrawdownDuration };
+}
+
+function findNAVForDate(history, targetDate) {
+    let navEntry = history.find(d => d.date.getTime() === targetDate.getTime());
+    if (!navEntry) {
+        const past = history.filter(d => d.date < targetDate);
+        if (past.length > 0) navEntry = past[past.length - 1];
+    }
+    return navEntry;
+}
+
+function calculateDailyValue(holdings, date) {
+    let dailyValue = 0;
+    let dataMissing = false;
+    
+    for (const data of Object.values(holdings)) {
+        const navEntry = findNAVForDate(data.history, date);
+        if (navEntry) {
+            dailyValue += data.units * navEntry.nav;
+        } else {
+            dataMissing = true;
+        }
+    }
+    
+    return { dailyValue, dataMissing };
+}
+
+function initializeLumpsumHoldings(basket, inputAmount, targetStartDate) {
+    const holdings = {};
+    
+    for (const [fundId, weight] of Object.entries(basket.allocation)) {
+        if (weight === 0) continue;
+        if (!NAV_CACHE[fundId]) return null;
+        
+        const purchaseNavObj = findClosestNAVBeforeOrOn(NAV_CACHE[fundId], targetStartDate);
+        if (!purchaseNavObj) return null;
+        
+        holdings[fundId] = { 
+            units: (inputAmount * weight / 100) / purchaseNavObj.nav, 
+            history: NAV_CACHE[fundId] 
+        };
+    }
+    
+    return holdings;
+}
+
+function initializeSIPHoldings(basket) {
+    const holdings = {};
+    
+    for (const [fundId, weight] of Object.entries(basket.allocation)) {
+        if (weight === 0) continue;
+        if (!NAV_CACHE[fundId]) return null;
+        
+        holdings[fundId] = { 
+            units: 0, 
+            history: NAV_CACHE[fundId], 
+            weight: weight 
+        };
+    }
+    
+    return holdings;
+}
+
+function processSIPInvestment(holdings, inputAmount, date) {
+    for (const data of Object.values(holdings)) {
+        const navEntry = findNAVForDate(data.history, date);
+        if (navEntry) {
+            data.units += (inputAmount * data.weight / 100) / navEntry.nav;
+        }
+    }
+}
+
+function calculateLumpsumPerformance(basket, inputAmount, activeTimeline, targetStartDate) {
+    const holdings = initializeLumpsumHoldings(basket, inputAmount, targetStartDate);
+    if (!holdings) return null;
+
+    const timeSeries = [];
+    let maxDrawdown = 0;
+    let peakValue = 0;
+    const drawdownState = {
+        drawdownPeriods: [],
+        currentDrawdownStart: null,
+        isInDrawdown: false
+    };
+
+    for (const dayPoint of activeTimeline) {
+        const date = dayPoint.date;
+        const { dailyValue, dataMissing } = calculateDailyValue(holdings, date);
+        
+        if (!dataMissing) {
+            // Update peak value and handle drawdown periods
+            if (dailyValue > peakValue) {
+                if (drawdownState.isInDrawdown && drawdownState.currentDrawdownStart) {
+                    const drawdownDays = calculateDaysBetween(drawdownState.currentDrawdownStart, date);
+                    if (drawdownDays > 0) {
+                        drawdownState.drawdownPeriods.push(drawdownDays);
+                    }
+                    drawdownState.isInDrawdown = false;
+                    drawdownState.currentDrawdownStart = null;
+                }
+                peakValue = dailyValue;
+            }
+            
+            const drawdown = calculateDrawdown(dailyValue, peakValue);
+            if (drawdown < maxDrawdown) maxDrawdown = drawdown;
+            
+            updateDrawdownTracking(drawdown, date, drawdownState);
+            timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
+        }
+    }
+
+    if (timeSeries.length === 0) return null;
+
+    const finalValue = timeSeries[timeSeries.length - 1].y;
+    const absReturn = ((finalValue - inputAmount) / inputAmount) * 100;
+    
+    // Calculate CAGR
+    const actualEndDate = timeSeries[timeSeries.length - 1].x;
+    const actualDurationDays = calculateDaysBetween(targetStartDate, actualEndDate);
+    const actualDurationYears = actualDurationDays / 365.25;
+    const cagr = actualDurationYears > 0 ? (Math.pow((finalValue / inputAmount), (1 / actualDurationYears)) - 1) * 100 : 0;
+    
+    const { avgDrawdownDuration, maxDrawdownDuration } = finalizeDrawdownTracking(
+        timeSeries[timeSeries.length - 1].x, 
+        drawdownState
+    );
+    
+    return { 
+        series: timeSeries, 
+        stats: { 
+            initial: inputAmount, 
+            final: finalValue, 
+            abs: absReturn, 
+            cagr: cagr, 
+            mdd: maxDrawdown,
+            avgDdDuration: avgDrawdownDuration,
+            maxDdDuration: maxDrawdownDuration
+        } 
+    };
+}
+
+function calculateSIPPerformance(basket, inputAmount, activeTimeline, actualStartDate) {
+    const holdings = initializeSIPHoldings(basket);
+    if (!holdings) return null;
+
+    const timeSeries = [];
+    let totalInvested = 0;
+    let maxDrawdown = 0;
+    let peakValue = 0;
+    const drawdownState = {
+        drawdownPeriods: [],
+        currentDrawdownStart: null,
+        isInDrawdown: false
+    };
+
+    let nextSipDate = new Date(actualStartDate);
+    let sipCount = 0;
+    const sipCashflows = [];
+
+    for (const dayPoint of activeTimeline) {
+        const date = dayPoint.date;
+        
+        // Process SIP investment if due
+        if (date >= nextSipDate) {
+            processSIPInvestment(holdings, inputAmount, date);
+            sipCashflows.push({ amount: -inputAmount, date: new Date(date) });
+            totalInvested += inputAmount;
+            sipCount++;
+            nextSipDate = new Date(actualStartDate);
+            nextSipDate.setMonth(nextSipDate.getMonth() + sipCount);
+        }
+
+        const { dailyValue, dataMissing } = calculateDailyValue(holdings, date);
+
+        if (!dataMissing && totalInvested > 0) {
+            // Update peak value and handle drawdown periods
+            if (dailyValue > peakValue) {
+                if (drawdownState.isInDrawdown && drawdownState.currentDrawdownStart) {
+                    const drawdownDays = calculateDaysBetween(drawdownState.currentDrawdownStart, date);
+                    if (drawdownDays > 0) {
+                        drawdownState.drawdownPeriods.push(drawdownDays);
+                    }
+                    drawdownState.isInDrawdown = false;
+                    drawdownState.currentDrawdownStart = null;
+                }
+                peakValue = dailyValue;
+            }
+            
+            const drawdown = calculateDrawdown(dailyValue, peakValue);
+            if (drawdown < maxDrawdown) maxDrawdown = drawdown;
+            
+            updateDrawdownTracking(drawdown, date, drawdownState);
+            timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
+        }
+    }
+
+    if (timeSeries.length === 0) return null;
+    
+    const finalValue = timeSeries[timeSeries.length - 1].y;
+    const absReturn = totalInvested > 0 ? ((finalValue - totalInvested) / totalInvested) * 100 : 0;
+    const lastDate = timeSeries[timeSeries.length - 1].x;
+    sipCashflows.push({ amount: finalValue, date: new Date(lastDate) });
+    
+    const xirr = calculateXIRR(sipCashflows);
+    const { avgDrawdownDuration, maxDrawdownDuration } = finalizeDrawdownTracking(lastDate, drawdownState);
+    
+    return { 
+        series: timeSeries, 
+        stats: { 
+            initial: totalInvested, 
+            final: finalValue, 
+            abs: absReturn, 
+            cagr: xirr, 
+            mdd: maxDrawdown,
+            avgDdDuration: avgDrawdownDuration,
+            maxDdDuration: maxDrawdownDuration
+        } 
+    };
+}
+
+// Main function - Calculate Basket Performance
 function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmount, customStart = null, customEnd = null) {
     const targetStartDate = getTargetStartDate(periodStr, customStart);
     const targetEndDate = getTargetEndDate(periodStr, customEnd);
     const masterFundId = '118741'; // Nifty 50
+    
     if (!NAV_CACHE[masterFundId]) return null;
 
     const masterHistory = NAV_CACHE[masterFundId];
     const startNode = findClosestNAVBeforeOrOn(masterHistory, targetStartDate);
     if (!startNode) return null;
+    
     const actualStartDate = startNode.date;
     const activeTimeline = masterHistory.filter(d => d.date >= actualStartDate && d.date <= targetEndDate);
 
-    let timeSeries = [];
-    let maxDrawdown = 0;
-    let peakValue = 0;
-    
-    // Drawdown duration tracking
-    let drawdownPeriods = [];
-    let currentDrawdownStart = null;
-    let isInDrawdown = false;
-    
-    // LUMPSUM
     if (investmentMode === 'lumpsum') {
-        const holdings = {};
-        let isValid = true;
-        for (const [fundId, weight] of Object.entries(basket.allocation)) {
-            if (weight === 0) continue;
-            if (!NAV_CACHE[fundId]) { isValid = false; break; }
-            const purchaseNavObj = findClosestNAVBeforeOrOn(NAV_CACHE[fundId], targetStartDate);
-            if (!purchaseNavObj) { isValid = false; break; }
-            holdings[fundId] = { units: (inputAmount * weight / 100) / purchaseNavObj.nav, history: NAV_CACHE[fundId] };
-        }
-        if (!isValid) return null;
-
-        activeTimeline.forEach(dayPoint => {
-            const date = dayPoint.date;
-            let dailyValue = 0;
-            let dataMissing = false;
-            for (const [fundId, data] of Object.entries(holdings)) {
-                let navEntry = data.history.find(d => d.date.getTime() === date.getTime());
-                if (!navEntry) {
-                    const past = data.history.filter(d => d.date < date);
-                    if (past.length > 0) navEntry = past[past.length - 1];
-                }
-                if (navEntry) dailyValue += data.units * navEntry.nav;
-                else dataMissing = true;
-            }
-            if (!dataMissing) {
-                if (dailyValue > peakValue) {
-                    // New peak reached - end any current drawdown period
-                    if (isInDrawdown && currentDrawdownStart) {
-                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-                        if (drawdownDays > 0) {
-                            drawdownPeriods.push(drawdownDays);
-                        }
-                        isInDrawdown = false;
-                        currentDrawdownStart = null;
-                    }
-                    peakValue = dailyValue;
-                }
-                
-                const drawdown = peakValue > 0 ? parseFloat((((dailyValue - peakValue) / peakValue) * 100).toFixed(2)) : 0;
-                if (drawdown < maxDrawdown) maxDrawdown = drawdown;
-                
-                // Track drawdown periods
-                if (drawdown < 0 && !isInDrawdown) {
-                    // Starting a new drawdown period
-                    isInDrawdown = true;
-                    currentDrawdownStart = date;
-                } else if (drawdown === 0 && isInDrawdown) {
-                    // Recovered from drawdown
-                    if (currentDrawdownStart) {
-                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-                        if (drawdownDays > 0) {
-                            drawdownPeriods.push(drawdownDays);
-                        }
-                    }
-                    isInDrawdown = false;
-                    currentDrawdownStart = null;
-                }
-                
-                timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
-            }
-        });
-        if (timeSeries.length === 0) return null;
-        
-        const finalValue = timeSeries[timeSeries.length - 1].y;
-        const absReturn = ((finalValue - inputAmount) / inputAmount) * 100;
-        
-        // Calculate actual duration in years from actual start and end dates
-        const actualEndDate = timeSeries[timeSeries.length - 1].x;
-        const actualDurationDays = (actualEndDate - actualStartDate) / (1000 * 60 * 60 * 24);
-        const actualDurationYears = actualDurationDays / 365.25; // Use 365.25 to account for leap years
-        
-        const cagr = actualDurationYears > 0 ? (Math.pow((finalValue / inputAmount), (1 / actualDurationYears)) - 1) * 100 : 0;
-        
-        // Handle any ongoing drawdown at the end
-        if (isInDrawdown && currentDrawdownStart) {
-            const lastDate = timeSeries[timeSeries.length - 1].x;
-            const drawdownDays = Math.floor((lastDate - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-            if (drawdownDays > 0) {
-                drawdownPeriods.push(drawdownDays);
-            }
-        }
-        
-        // Calculate drawdown duration metrics
-        const avgDrawdownDuration = drawdownPeriods.length > 0 ? 
-            Math.round(drawdownPeriods.reduce((sum, days) => sum + days, 0) / drawdownPeriods.length) : 0;
-        const maxDrawdownDuration = drawdownPeriods.length > 0 ? Math.max(...drawdownPeriods) : 0;
-        
-        return { 
-            series: timeSeries, 
-            stats: { 
-                initial: inputAmount, 
-                final: finalValue, 
-                abs: absReturn, 
-                cagr: cagr, 
-                mdd: maxDrawdown,
-                avgDdDuration: avgDrawdownDuration,
-                maxDdDuration: maxDrawdownDuration
-            } 
-        };
-    }
-    // SIP
-    else {
-        const holdings = {};
-        let totalInvested = 0;
-        let isValid = true;
-        
-        // Reset drawdown duration tracking for SIP
-        drawdownPeriods = [];
-        currentDrawdownStart = null;
-        isInDrawdown = false;
-        for (const [fundId, weight] of Object.entries(basket.allocation)) {
-            if (weight === 0) continue;
-            if (!NAV_CACHE[fundId]) { isValid = false; break; }
-            holdings[fundId] = { units: 0, history: NAV_CACHE[fundId], weight: weight };
-        }
-        if (!isValid) return null;
-
-        let nextSipDate = new Date(actualStartDate);
-        let sipCount = 0;
-        const sipCashflows = [];
-
-        activeTimeline.forEach(dayPoint => {
-            const date = dayPoint.date;
-            if (date >= nextSipDate) {
-                for (const [fundId, data] of Object.entries(holdings)) {
-                    let navEntry = data.history.find(d => d.date.getTime() === date.getTime());
-                    if (!navEntry) {
-                        const past = data.history.filter(d => d.date < date);
-                        if (past.length > 0) navEntry = past[past.length - 1];
-                    }
-                    if (navEntry) {
-                        data.units += (inputAmount * data.weight / 100) / navEntry.nav;
-                    }
-                }
-                sipCashflows.push({ amount: -inputAmount, date: new Date(date) });
-                totalInvested += inputAmount;
-                sipCount++;
-                nextSipDate = new Date(actualStartDate);
-                nextSipDate.setMonth(nextSipDate.getMonth() + sipCount);
-            }
-
-            let dailyValue = 0;
-            let dataMissing = false;
-            for (const [fundId, data] of Object.entries(holdings)) {
-                let navEntry = data.history.find(d => d.date.getTime() === date.getTime());
-                if (!navEntry) {
-                    const past = data.history.filter(d => d.date < date);
-                    if (past.length > 0) navEntry = past[past.length - 1];
-                }
-                if (navEntry) dailyValue += data.units * navEntry.nav;
-                else if (data.units > 0) dataMissing = true;
-            }
-
-            if (!dataMissing && totalInvested > 0) {
-                if (dailyValue > peakValue) {
-                    // New peak reached - end any current drawdown period
-                    if (isInDrawdown && currentDrawdownStart) {
-                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-                        if (drawdownDays > 0) {
-                            drawdownPeriods.push(drawdownDays);
-                        }
-                        isInDrawdown = false;
-                        currentDrawdownStart = null;
-                    }
-                    peakValue = dailyValue;
-                }
-                
-                let drawdown = 0;
-                if (peakValue > 0) drawdown = parseFloat((((dailyValue - peakValue) / peakValue) * 100).toFixed(2));
-                if (drawdown < maxDrawdown) maxDrawdown = drawdown;
-                
-                // Track drawdown periods
-                if (drawdown < 0 && !isInDrawdown) {
-                    // Starting a new drawdown period
-                    isInDrawdown = true;
-                    currentDrawdownStart = date;
-                } else if (drawdown === 0 && isInDrawdown) {
-                    // Recovered from drawdown
-                    if (currentDrawdownStart) {
-                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-                        if (drawdownDays > 0) {
-                            drawdownPeriods.push(drawdownDays);
-                        }
-                    }
-                    isInDrawdown = false;
-                    currentDrawdownStart = null;
-                }
-                
-                timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
-            }
-        });
-
-        if (timeSeries.length === 0) return null;
-        const finalValue = timeSeries[timeSeries.length - 1].y;
-        const absReturn = totalInvested > 0 ? ((finalValue - totalInvested) / totalInvested) * 100 : 0;
-        const lastDate = timeSeries[timeSeries.length - 1].x;
-        sipCashflows.push({ amount: finalValue, date: new Date(lastDate) });
-        
-        // XIRR accounts for the timing and amount of each cashflow
-        const xirr = calculateXIRR(sipCashflows);
-        
-        // Handle any ongoing drawdown at the end
-        if (isInDrawdown && currentDrawdownStart) {
-            const lastDate = timeSeries[timeSeries.length - 1].x;
-            const drawdownDays = Math.floor((lastDate - currentDrawdownStart) / (1000 * 60 * 60 * 24));
-            if (drawdownDays > 0) {
-                drawdownPeriods.push(drawdownDays);
-            }
-        }
-        
-        // Calculate drawdown duration metrics
-        const avgDrawdownDuration = drawdownPeriods.length > 0 ? 
-            Math.round(drawdownPeriods.reduce((sum, days) => sum + days, 0) / drawdownPeriods.length) : 0;
-        const maxDrawdownDuration = drawdownPeriods.length > 0 ? Math.max(...drawdownPeriods) : 0;
-        
-        return { 
-            series: timeSeries, 
-            stats: { 
-                initial: totalInvested, 
-                final: finalValue, 
-                abs: absReturn, 
-                cagr: xirr, 
-                mdd: maxDrawdown,
-                avgDdDuration: avgDrawdownDuration,
-                maxDdDuration: maxDrawdownDuration
-            } 
-        };
+        return calculateLumpsumPerformance(basket, inputAmount, activeTimeline, targetStartDate);
+    } else {
+        return calculateSIPPerformance(basket, inputAmount, activeTimeline, actualStartDate);
     }
 }
