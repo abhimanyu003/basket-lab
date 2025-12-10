@@ -117,6 +117,11 @@ function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmou
     let maxDrawdown = 0;
     let peakValue = 0;
     
+    // Drawdown duration tracking
+    let drawdownPeriods = [];
+    let currentDrawdownStart = null;
+    let isInDrawdown = false;
+    
     // LUMPSUM
     if (investmentMode === 'lumpsum') {
         const holdings = {};
@@ -144,9 +149,39 @@ function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmou
                 else dataMissing = true;
             }
             if (!dataMissing) {
-                if (dailyValue > peakValue) peakValue = dailyValue;
+                if (dailyValue > peakValue) {
+                    // New peak reached - end any current drawdown period
+                    if (isInDrawdown && currentDrawdownStart) {
+                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+                        if (drawdownDays > 0) {
+                            drawdownPeriods.push(drawdownDays);
+                        }
+                        isInDrawdown = false;
+                        currentDrawdownStart = null;
+                    }
+                    peakValue = dailyValue;
+                }
+                
                 const drawdown = peakValue > 0 ? parseFloat((((dailyValue - peakValue) / peakValue) * 100).toFixed(2)) : 0;
                 if (drawdown < maxDrawdown) maxDrawdown = drawdown;
+                
+                // Track drawdown periods
+                if (drawdown < 0 && !isInDrawdown) {
+                    // Starting a new drawdown period
+                    isInDrawdown = true;
+                    currentDrawdownStart = date;
+                } else if (drawdown === 0 && isInDrawdown) {
+                    // Recovered from drawdown
+                    if (currentDrawdownStart) {
+                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+                        if (drawdownDays > 0) {
+                            drawdownPeriods.push(drawdownDays);
+                        }
+                    }
+                    isInDrawdown = false;
+                    currentDrawdownStart = null;
+                }
+                
                 timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
             }
         });
@@ -162,13 +197,43 @@ function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmou
         
         const cagr = actualDurationYears > 0 ? (Math.pow((finalValue / inputAmount), (1 / actualDurationYears)) - 1) * 100 : 0;
         
-        return { series: timeSeries, stats: { initial: inputAmount, final: finalValue, abs: absReturn, cagr: cagr, mdd: maxDrawdown } };
+        // Handle any ongoing drawdown at the end
+        if (isInDrawdown && currentDrawdownStart) {
+            const lastDate = timeSeries[timeSeries.length - 1].x;
+            const drawdownDays = Math.floor((lastDate - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+            if (drawdownDays > 0) {
+                drawdownPeriods.push(drawdownDays);
+            }
+        }
+        
+        // Calculate drawdown duration metrics
+        const avgDrawdownDuration = drawdownPeriods.length > 0 ? 
+            Math.round(drawdownPeriods.reduce((sum, days) => sum + days, 0) / drawdownPeriods.length) : 0;
+        const maxDrawdownDuration = drawdownPeriods.length > 0 ? Math.max(...drawdownPeriods) : 0;
+        
+        return { 
+            series: timeSeries, 
+            stats: { 
+                initial: inputAmount, 
+                final: finalValue, 
+                abs: absReturn, 
+                cagr: cagr, 
+                mdd: maxDrawdown,
+                avgDdDuration: avgDrawdownDuration,
+                maxDdDuration: maxDrawdownDuration
+            } 
+        };
     }
     // SIP
     else {
         const holdings = {};
         let totalInvested = 0;
         let isValid = true;
+        
+        // Reset drawdown duration tracking for SIP
+        drawdownPeriods = [];
+        currentDrawdownStart = null;
+        isInDrawdown = false;
         for (const [fundId, weight] of Object.entries(basket.allocation)) {
             if (weight === 0) continue;
             if (!NAV_CACHE[fundId]) { isValid = false; break; }
@@ -213,10 +278,40 @@ function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmou
             }
 
             if (!dataMissing && totalInvested > 0) {
-                if (dailyValue > peakValue) peakValue = dailyValue;
+                if (dailyValue > peakValue) {
+                    // New peak reached - end any current drawdown period
+                    if (isInDrawdown && currentDrawdownStart) {
+                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+                        if (drawdownDays > 0) {
+                            drawdownPeriods.push(drawdownDays);
+                        }
+                        isInDrawdown = false;
+                        currentDrawdownStart = null;
+                    }
+                    peakValue = dailyValue;
+                }
+                
                 let drawdown = 0;
                 if (peakValue > 0) drawdown = parseFloat((((dailyValue - peakValue) / peakValue) * 100).toFixed(2));
                 if (drawdown < maxDrawdown) maxDrawdown = drawdown;
+                
+                // Track drawdown periods
+                if (drawdown < 0 && !isInDrawdown) {
+                    // Starting a new drawdown period
+                    isInDrawdown = true;
+                    currentDrawdownStart = date;
+                } else if (drawdown === 0 && isInDrawdown) {
+                    // Recovered from drawdown
+                    if (currentDrawdownStart) {
+                        const drawdownDays = Math.floor((date - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+                        if (drawdownDays > 0) {
+                            drawdownPeriods.push(drawdownDays);
+                        }
+                    }
+                    isInDrawdown = false;
+                    currentDrawdownStart = null;
+                }
+                
                 timeSeries.push({ x: date, y: dailyValue, drawdown: drawdown });
             }
         });
@@ -230,6 +325,31 @@ function calculateBasketPerformance(basket, periodStr, investmentMode, inputAmou
         // XIRR accounts for the timing and amount of each cashflow
         const xirr = calculateXIRR(sipCashflows);
         
-        return { series: timeSeries, stats: { initial: totalInvested, final: finalValue, abs: absReturn, cagr: xirr, mdd: maxDrawdown } };
+        // Handle any ongoing drawdown at the end
+        if (isInDrawdown && currentDrawdownStart) {
+            const lastDate = timeSeries[timeSeries.length - 1].x;
+            const drawdownDays = Math.floor((lastDate - currentDrawdownStart) / (1000 * 60 * 60 * 24));
+            if (drawdownDays > 0) {
+                drawdownPeriods.push(drawdownDays);
+            }
+        }
+        
+        // Calculate drawdown duration metrics
+        const avgDrawdownDuration = drawdownPeriods.length > 0 ? 
+            Math.round(drawdownPeriods.reduce((sum, days) => sum + days, 0) / drawdownPeriods.length) : 0;
+        const maxDrawdownDuration = drawdownPeriods.length > 0 ? Math.max(...drawdownPeriods) : 0;
+        
+        return { 
+            series: timeSeries, 
+            stats: { 
+                initial: totalInvested, 
+                final: finalValue, 
+                abs: absReturn, 
+                cagr: xirr, 
+                mdd: maxDrawdown,
+                avgDdDuration: avgDrawdownDuration,
+                maxDdDuration: maxDrawdownDuration
+            } 
+        };
     }
 }

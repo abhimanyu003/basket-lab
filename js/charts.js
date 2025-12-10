@@ -70,6 +70,8 @@ function renderStatsTable(results) {
             <td class="p-4 align-middle text-right text-emerald-600 font-semibold bg-emerald-50/50">${s.abs.toFixed(2)}%</td>
             <td class="p-4 align-middle text-right text-blue-600 font-medium">${investmentMode === 'sip' ? s.cagr.toFixed(2) : s.cagr.toFixed(2)}%</td>
             <td class="p-4 align-middle text-right text-red-600 font-medium bg-red-50/50">${s.mdd.toFixed(2)}%</td>
+            <td class="p-4 align-middle text-right text-orange-600 font-medium">${s.avgDdDuration} days</td>
+            <td class="p-4 align-middle text-right text-red-700 font-medium">${s.maxDdDuration} days</td>
         </tr>`;
     }).join('');
     
