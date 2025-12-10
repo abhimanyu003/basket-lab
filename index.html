@@ -257,6 +257,100 @@
             </div>
         </div>
 
+
+        <!-- Financial Metrics Explanation Section -->
+        <div class="bg-white border border-zinc-200 rounded-md shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-zinc-200">
+                <h3 class="font-medium text-sm leading-none tracking-tight">Understanding Financial Metrics</h3>
+                <p class="text-xs text-zinc-600 mt-1">Learn what each metric means and how to interpret the results for better investment decisions.</p>
+            </div>
+            <div class="p-4 space-y-4">
+                
+                <!-- Investment Modes -->
+                <div class="space-y-2">
+                    <h4 class="font-medium text-sm text-zinc-900 flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                        </svg>
+                        Investment Modes
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-blue-50 rounded border border-blue-200">
+                            <h5 class="font-medium text-xs text-blue-900 mb-1">Lumpsum Investment</h5>
+                            <p class="text-xs text-blue-800 mb-1">One-time investment of the entire amount at the beginning.</p>
+                            <p class="text-[10px] text-blue-700"><strong>Best for:</strong> Large amount available, immediate market exposure.</p>
+                        </div>
+                        <div class="p-3 bg-green-50 rounded border border-green-200">
+                            <h5 class="font-medium text-xs text-green-900 mb-1">SIP (Systematic Investment Plan)</h5>
+                            <p class="text-xs text-green-800 mb-1">Regular monthly investments of a fixed amount.</p>
+                            <p class="text-[10px] text-green-700"><strong>Best for:</strong> Disciplined investing, rupee cost averaging.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="space-y-2">
+                    <h4 class="font-medium text-sm text-zinc-900 flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        Performance Metrics
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="p-3 bg-zinc-50 rounded border border-zinc-200">
+                            <h5 class="font-medium text-xs text-zinc-900 mb-1">Absolute Returns</h5>
+                            <p class="text-xs text-zinc-700 mb-1">Simple percentage gain/loss without time factor.</p>
+                            <p class="text-[10px] text-zinc-600"><strong>Use:</strong> Quick comparison of total gains.</p>
+                        </div>
+                        <div class="p-3 bg-zinc-50 rounded border border-zinc-200">
+                            <h5 class="font-medium text-xs text-zinc-900 mb-1">CAGR (Lumpsum)</h5>
+                            <p class="text-xs text-zinc-700 mb-1">Compound Annual Growth Rate for lumpsum.</p>
+                            <p class="text-[10px] text-zinc-600"><strong>Use:</strong> Compare across time periods.</p>
+                        </div>
+                        <div class="p-3 bg-zinc-50 rounded border border-zinc-200">
+                            <h5 class="font-medium text-xs text-zinc-900 mb-1">XIRR (SIP)</h5>
+                            <p class="text-xs text-zinc-700 mb-1">Internal Rate of Return for multiple cash flows.</p>
+                            <p class="text-[10px] text-zinc-600"><strong>Use:</strong> True annualized return for SIP.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Metrics -->
+                <div class="space-y-2">
+                    <h4 class="font-medium text-sm text-zinc-900 flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        Risk Metrics
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="p-3 bg-red-50 rounded border border-red-200">
+                            <h5 class="font-medium text-xs text-red-900 mb-1">Maximum Drawdown</h5>
+                            <p class="text-xs text-red-800 mb-1">Largest peak-to-trough decline.</p>
+                            <div class="text-[10px] text-red-600 space-y-0.5">
+                                <div>&lt;10%: Low • 10-20%: Moderate • &gt;20%: High</div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-orange-50 rounded border border-orange-200">
+                            <h5 class="font-medium text-xs text-orange-900 mb-1">Average DD Duration</h5>
+                            <p class="text-xs text-orange-800 mb-1">Typical recovery time from drawdowns.</p>
+                            <div class="text-[10px] text-orange-600 space-y-0.5">
+                                <div>&lt;30d: Quick • 30-90d: Moderate • &gt;90d: Slow</div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-red-50 rounded border border-red-200">
+                            <h5 class="font-medium text-xs text-red-900 mb-1">Maximum DD Duration</h5>
+                            <p class="text-xs text-red-800 mb-1">Longest period in drawdown.</p>
+                            <div class="text-[10px] text-red-600 space-y-0.5">
+                                <div>&lt;6m: OK • 6-12m: Hard • &gt;1y: Patience</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <!-- Share URL Section -->
         <div class="bg-white border border-zinc-200 rounded-md shadow-sm overflow-hidden">
             <div class="p-6 border-b border-zinc-200">
@@ -281,7 +375,7 @@
                 </div>
             </div>
         </div>
-
+        
     </main>
 
     <!-- Footer -->
@@ -306,7 +400,7 @@
             <div class="flex flex-col lg:flex-row justify-between items-start gap-8">
                 <!-- Contributors -->
                 <div class="flex-1">
-                    <h3 class="text-sm font-semibold text-zinc-900 mb-4">Contributors</h3>
+                    <h3 class="text-sm font-semibold text-zinc-900 mb-4">Reach Out To Developers</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         
                         <!-- Contributor 1 -->
