@@ -1,7 +1,7 @@
 // Configuration and Constants
 const CONFIG = {
     CACHE_DURATION: 8 * 60 * 60 * 1000, // 8 hours in milliseconds
-    MAX_MEMORY_CACHE: 10, // Number of items in cache
+    MAX_MEMORY_CACHE: 100, // Number of items in cache
     SEARCH_DEBOUNCE: 300, // ms
     MIN_SEARCH_LENGTH: 2,
     MAX_SEARCH_RESULTS: 10
